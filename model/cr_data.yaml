@@ -1,0 +1,16 @@
+# YOLO dataset config
+# Adjust 'path' if running training from a different working directory.
+path: ../data
+train: frames/train
+val: frames/val
+
+# Ensure this matches data/classes.txt exactly (order matters!)
+names:
+  - card1
+  - card2
+  - card3
+  - card4
+  - card5
+  - card6
+  - card7
+  - card8

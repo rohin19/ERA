@@ -1,1 +1,1 @@
-# E.R.O. - Edge Royale Analytics
+# E.R.A. - Edge Royale Analytics
