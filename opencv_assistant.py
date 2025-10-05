@@ -4,11 +4,14 @@ from pathlib import Path
 import numpy as np
 import cv2
 
+import threading
+import queue
+from newGameState import GameState
+
 try:
     import mss
     from runtime.overlay.qt_capture_view import load_capture_config
     from runtime.infer.onnx_engine import CardDetectionEngine
-    from runtime.gamestate.state import GameState
     DEPENDENCIES_OK = True
 except ImportError as e:
     print(f"❌ Dependencies missing: {e}")
@@ -16,17 +19,6 @@ except ImportError as e:
     DEPENDENCIES_OK = False
 
 class OpenCVCaptureEngine:
-    """Handles screen capture and inference using OpenCV for display"""
-    def __init__(self, capture_config, model_path):
-        self.capture_config = capture_config
-        self.model_path = model_path
-        self.running = False
-        self.inference_engine = None
-        self.game_state = GameState()
-        self.fps = 0.0
-        self.frame_count = 0
-        self.last_fps_time = time.time()
-
     def initialize(self):
         try:
             self.inference_engine = CardDetectionEngine(self.model_path)
@@ -35,6 +27,16 @@ class OpenCVCaptureEngine:
         except Exception as e:
             print(f"❌ Failed to initialize inference engine: {e}")
             return False
+    """Handles screen capture and inference using OpenCV for display"""
+    def __init__(self, capture_config, model_path):
+        self.capture_config = capture_config
+        self.model_path = model_path
+        self.running = False
+        self.inference_engine = None
+        self.game_state = GameState()  # Use newGameState.GameState
+        self.fps = 0.0
+        self.frame_count = 0
+        self.last_fps_time = time.time()
 
     def run(self):
         if not self.initialize():
@@ -50,51 +52,97 @@ class OpenCVCaptureEngine:
             }
             window_name = "Clash Royale OpenCV Assistant"
             cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+
+            # Threading setup
+            frame_queue = queue.Queue(maxsize=1)
+            detections_queue = queue.Queue(maxsize=1)
+            stop_event = threading.Event()
+
+            def inference_worker():
+                while not stop_event.is_set():
+                    try:
+                        frame = frame_queue.get(timeout=0.1)
+                        detections = self.inference_engine.predict(frame, confidence_threshold=0.5)
+                        if detections_queue.full():
+                            detections_queue.get_nowait()
+                        detections_queue.put(detections)
+                    except queue.Empty:
+                        continue
+
+            thread = threading.Thread(target=inference_worker, daemon=True)
+            thread.start()
+
+            latest_detections = []
             while self.running:
                 try:
                     screenshot = sct.grab(monitor_config)
                     frame = np.array(screenshot)
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
-                    # Optionally, run inference and draw boxes (uncomment if desired)
-                    detections = self.inference_engine.predict(frame, confidence_threshold=0.5)
-                    # if detections:
-                    #     print("Detections:")
-                    #     frame_h, frame_w = frame.shape[:2]
-                    #     MODEL_INPUT_SIZE = 640  # Change if your model uses a different input size
-                    #     scale_x = frame_w / MODEL_INPUT_SIZE
-                    #     scale_y = frame_h / MODEL_INPUT_SIZE
-                    #     for det in detections:
-                    #         bbox = det['bbox']
-                    #         # Assume bbox is in model input size coordinates
-                    #         x1 = int(bbox[0] * scale_x)
-                    #         y1 = int(bbox[1] * scale_y)
-                    #         x2 = int(bbox[2] * scale_x)
-                    #         y2 = int(bbox[3] * scale_y)
-                    #         label = f"{det['class_name']} ({det['confidence']:.0%})"
-                    #         print(f"  {label} at [{x1}, {y1}, {x2}, {y2}]")
-                    #         cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 2)
-                    #         cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
 
-                    if detections:
+                    # Send frame to inference thread
+                    if not frame_queue.full():
+                        frame_queue.put_nowait(frame.copy())
+
+                    # Get latest detections if available
+                    try:
+                        latest_detections = detections_queue.get_nowait()
+                    except queue.Empty:
+                        pass
+
+                    # Draw detections and update game state
+                    frame_h, frame_w = frame.shape[:2]
+                    MODEL_INPUT_SIZE = 640
+                    scale_x = frame_w / MODEL_INPUT_SIZE
+                    scale_y = frame_h / MODEL_INPUT_SIZE
+                    detection_dicts = []
+                    if latest_detections:
                         print("Detections:")
-                        for det in detections:
-                            x1 = int(bbox[0])
-                            y1 = int(bbox[1])
-                            x2 = int(bbox[2])
-                            y2 = int(bbox[3])
+                        for det in latest_detections:
                             bbox = det['bbox']
+                            x1 = int(bbox[0] * scale_x)
+                            y1 = int(bbox[1] * scale_y)
+                            x2 = int(bbox[2] * scale_x)
+                            y2 = int(bbox[3] * scale_y)
                             label = f"{det['class_name']} ({det['confidence']:.0%})"
-
                             print(f"  {label} at [{x1}, {y1}, {x2}, {y2}]")
+                            cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 2)
+                            cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
+                            detection_dicts.append({
+                                'card': det['class_name'],
+                                'bbox': [x1, y1, x2, y2],
+                                'confidence': det['confidence'],
+                                'frame': None
+                            })
+                    # Update game state with detection info
+                    self.game_state.update(detection_dicts)
+                    state = self.game_state.get_state()
+                    print(f"Opponent Elixir: {state['elixir_opponent']:.2f} | Last Played: {state['last_played']} | Deck: {state['deck']}")
 
-                    cv2.imshow(window_name, frame)
-                    if cv2.waitKey(30) & 0xFF == ord('q'):
+                    # Draw FPS counter in top-left
+                    fps_text = f"FPS: {self.fps:.1f}"
+                    cv2.putText(frame, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,255), 2)
+
+                    # Listen for spacebar to start elixir counting
+                    key = cv2.waitKey(1) & 0xFF
+                    if key == ord('q'):
                         self.stop()
                         break
+                    if key == ord(' '):
+                        if not self.game_state.elixir_counting_enabled:
+                            self.game_state.start_elixir_counting()
+                            print('Elixir counting started!')
+                    # Show overlay if elixir counting not started
+                    if not self.game_state.elixir_counting_enabled:
+                        cv2.putText(frame, 'Press SPACE to start elixir counting', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
+
+                    cv2.imshow(window_name, frame)
+
                     self._update_fps()
                 except Exception as e:
                     print(f"❌ Capture loop error: {e}")
                     time.sleep(0.1)
+            stop_event.set()
+            thread.join()
             cv2.destroyAllWindows()
 
     def _update_fps(self):
@@ -127,4 +175,8 @@ def main():
     return 0
 
 if __name__ == "__main__":
+    # DEBUG: Print GameState class and its attributes
+    print('DEBUG: GameState imported from:', GameState.__module__)
+    print('DEBUG: GameState attributes:', dir(GameState))
+
     sys.exit(main())
