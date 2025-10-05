@@ -53,7 +53,7 @@ pip-wheel-metadata/
 *.ckpt
 
 # ===== Ultralytics / YOLO Runs =====
-model/runs*/
+
 
 # ===== Dataset (ignore heavy assets) =====
 data/dataset_yolov11/

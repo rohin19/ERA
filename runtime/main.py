@@ -37,8 +37,18 @@ def print_game_state(state):
     print(f"\nGame Active: {'Yes' if snapshot['game_active'] else 'No'}")
     print(f"Current Elixir: {snapshot['elixir']:.1f}")
     
-    print("\nAvailable Cards:", ', '.join(snapshot['available_cards']) if snapshot['available_cards'] else "None")
-    print("Next Card:", snapshot['next_card'] if snapshot['next_card'] else "Unknown")
+    # Show all cards seen in the opponent's total deck
+    deck_list = [play['card'] for play in snapshot['plays']]
+    print("\nOpponent's Total Deck:")
+    print(', '.join(deck_list[-8:]) if deck_list else "No cards seen yet")
+    
+    # Show opponent's current hand (cards 5-8 in rotation after seeing all 8)
+    print("\nOpponent's Current Hand:")
+    print(', '.join(snapshot['available_cards']) if snapshot['available_cards'] else "Need to see more cards")
+    
+    # Show the next card (card that will come after current hand)
+    print("\nOpponent's Next Card:")
+    print(snapshot['next_card'] if snapshot['next_card'] else "Need to see more cards")
     
     print("\nControls:")
     print("  'R' - Reset game state")

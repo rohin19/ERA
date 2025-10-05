@@ -96,16 +96,46 @@ class GameState:
     def get_available_cards(self) -> List[str]:
         """Get the 4 cards currently available to opponent"""
         deck_list = list(self.deck)
-        if len(deck_list) < 4:
-            return deck_list
-        return deck_list[-4:]
+        cards_seen = len(deck_list)
+        
+        # Always show 4 slots for their hand
+        current_hand = ["?" for _ in range(4)]
+        
+        if cards_seen >= 5:
+            # After 5 cards, we know 1st card is in their hand
+            current_hand[0] = deck_list[0]
+        if cards_seen >= 6:
+            # After 6 cards, we know 2nd card is in their hand
+            current_hand[1] = deck_list[1]
+        if cards_seen >= 7:
+            # After 7 cards, we know 3rd card is in their hand
+            current_hand[2] = deck_list[2]
+        if cards_seen >= 8:
+            # After all 8 cards, we know their full hand
+            current_hand[3] = deck_list[3]
+            
+        return current_hand
 
     def get_next_card(self) -> Optional[str]:
-        """Get the next card in rotation (5th card)"""
+        """Get the next card that will enter opponent's hand"""
         deck_list = list(self.deck)
-        if len(deck_list) < 5:
+        if len(deck_list) < 4:
+            # Need to see at least 4 cards to know the next one
             return None
-        return deck_list[-5]
+            
+        # Calculate which card will be next based on how many cards we've seen
+        cards_seen = len(deck_list)
+        if cards_seen >= 8:
+            # After seeing all 8, next card is the first one played
+            return deck_list[0]
+        elif cards_seen >= 4:
+            # When we've seen 4-7 cards, the next card is the
+            # (number of cards seen - 3)th card played
+            # e.g., after 5 cards: index 2 (3rd card)
+            #      after 6 cards: index 3 (4th card)
+            return deck_list[cards_seen - 4]
+        
+        return None
 
     def snapshot(self) -> Dict[str, Any]:
         """Get current game state"""

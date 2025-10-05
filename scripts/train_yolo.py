@@ -44,15 +44,14 @@ def main():
             exist_ok=True,  # Overwrite existing experiment
         )
         
-        print("✅ Training completed successfully!")
-        print("📂 Check: model/runs/*/weights/best.pt")
-        print("📊 View TensorBoard logs: tensorboard --logdir model/runs")
+        print("Training completed successfully!")
+        print("Check: model/runs/*/weights/best.pt")
         
     except ImportError:
-        print("❌ ultralytics not installed. Run: pip install ultralytics")
+        print("ultralytics not installed. Run: pip install ultralytics")
         sys.exit(1)
     except Exception as e:
-        print(f"❌ Training failed: {e}")
+        print(f"Training failed: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
