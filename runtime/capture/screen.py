@@ -217,7 +217,13 @@ def main():
         while True:
             if not selection_mode:
                 # Normal capture mode
-                frame = np.array(sct.grab(monitor))
+                monitor_int = {
+                    "top": int(round(monitor["top"])),
+                    "left": int(round(monitor["left"])),
+                    "width": int(round(monitor["width"])),
+                    "height": int(round(monitor["height"]))
+                }
+                frame = np.array(sct.grab(monitor_int))
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
                 
@@ -250,7 +256,13 @@ def main():
                     start_time = time.time()
             elif key == ord('s') or key == ord('S'):  # Save screenshot
                 if not selection_mode:
-                    frame = np.array(sct.grab(monitor))
+                    monitor_int = {
+                        "top": int(round(monitor["top"])),
+                        "left": int(round(monitor["left"])),
+                        "width": int(round(monitor["width"])),
+                        "height": int(round(monitor["height"]))
+                    }
+                    frame = np.array(sct.grab(monitor_int))
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
                     timestamp = int(time.time())
                     filename = f"screenshot_{timestamp}.png"
