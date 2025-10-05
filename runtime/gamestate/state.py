@@ -1,4 +1,4 @@
-"""GameState skeleton for card tracking and elixir estimation."""
+ """GameState skeleton for card tracking and elixir estimation."""
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Dict, Any
