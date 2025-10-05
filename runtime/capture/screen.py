@@ -136,7 +136,7 @@ def selection_overlay_mode(sct, screen_width, screen_height):
         DISPLAY_SCALE = w / screen_width
         # print(f"Display Scale {DISPLAY_SCALE}") 
 
-        key = cv2.waitKey(30) & 0xFF
+        key = cv2.waitKey(100) & 0xFF
         if key == ord('s') or key == ord('S'):  # Save selection
             if rect_start and rect_end:
                 x1, y1 = rect_start
