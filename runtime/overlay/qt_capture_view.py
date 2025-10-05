@@ -10,6 +10,12 @@ import mss
 import numpy as np
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import sys
+# Ensure project root is on sys.path when running this file directly
+_THIS = Path(__file__).resolve()
+_ROOT = _THIS.parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 from runtime.capture.cv_selection import select_capture_area_cv
 
 
@@ -179,13 +185,10 @@ class CaptureWindow(QtWidgets.QWidget):
         self._frame_count = 0
 
         self._update_info()
-        self._make_shortcuts()
+        self._make_actions()
         self._wire_buttons()
         self._timer.start()
 
-        # Global key filter to catch keys regardless of focus
-        self._key_filter = _GlobalKeyFilter(self)
-        QtWidgets.QApplication.instance().installEventFilter(self._key_filter)
 
     # ----- capture -----
     def _grab_frame(self) -> Optional[np.ndarray]:
@@ -237,17 +240,7 @@ class CaptureWindow(QtWidgets.QWidget):
             f"Area: {self._monitor.width}x{self._monitor.height}  |  R: select  S: screenshot  Q/Esc: quit"
         )
 
-    def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
-        key = e.key()
-        if key in (QtCore.Qt.Key_Q, QtCore.Qt.Key_Escape):
-            self.close()
-            return
-        if key in (QtCore.Qt.Key_R,):
-            self.open_selection_overlay()
-            return
-        if key in (QtCore.Qt.Key_S,):
-            self.save_screenshot()
-            return
+    # Key handling is provided via QActions to avoid ambiguity
 
     def showEvent(self, e: QtGui.QShowEvent) -> None:
         super().showEvent(e)
@@ -256,28 +249,27 @@ class CaptureWindow(QtWidgets.QWidget):
         self.activateWindow()
         self.setFocus(QtCore.Qt.ActiveWindowFocusReason)
 
-    def _make_shortcuts(self):
-        # Application-wide shortcuts so they work regardless of focus
-        def make(seq, slot):
-            sc = QtWidgets.QShortcut(seq, self)
-            sc.setContext(QtCore.Qt.ApplicationShortcut)
-            sc.activated.connect(slot)
-            return sc
-
-        # Register both uppercase and lowercase for reliability across platforms
-        self._sc_r = make(QtGui.QKeySequence("R"), self.open_selection_overlay)
-        self._sc_r2 = make(QtGui.QKeySequence("r"), self.open_selection_overlay)
-        self._sc_s = make(QtGui.QKeySequence("S"), self.save_screenshot)
-        self._sc_s2 = make(QtGui.QKeySequence("s"), self.save_screenshot)
-        self._sc_q = make(QtGui.QKeySequence("Q"), self.close)
-        self._sc_q2 = make(QtGui.QKeySequence("q"), self.close)
-        # Esc key
-        self._sc_esc = make(QtGui.QKeySequence(QtCore.Qt.Key_Escape), self.close)
+    # Removed duplicate QShortcuts; using QActions exclusively
 
     def _wire_buttons(self):
         self._btn_select.clicked.connect(self.open_selection_overlay)
         self._btn_shot.clicked.connect(self.save_screenshot)
         self._btn_quit.clicked.connect(self.close)
+
+    def _make_actions(self):
+        # Use QActions with a single shortcut each for reliable key handling
+        def add_action(text, shortcut_seq, slot):
+            act = QtWidgets.QAction(text, self)
+            act.setShortcut(QtGui.QKeySequence(shortcut_seq))
+            act.setShortcutContext(QtCore.Qt.WidgetWithChildrenShortcut)
+            act.triggered.connect(slot)
+            self.addAction(act)
+            return act
+
+        self._act_select = add_action("Select Region", "R", self.open_selection_overlay)
+        self._act_shot = add_action("Screenshot", "S", self.save_screenshot)
+        self._act_quit = add_action("Quit", "Q", self.close)
+        self._act_esc = add_action("Quit", "Esc", self.close)
 
     def open_selection_overlay(self):
         # Use the OpenCV-based selection overlay for compatibility with existing workflow
