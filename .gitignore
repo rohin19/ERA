@@ -3,6 +3,7 @@ venv/
 .venv/
 env/
 __pypackages__/
+dataset_yolov11
 
 # ===== Python Bytecode & Caches =====
 __pycache__/

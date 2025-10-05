@@ -4,11 +4,26 @@ import cv2
 import time
 import json
 import os
+import sys
+from pathlib import Path
+
+# New: Qt-based capture viewer
+try:
+    # Ensure project root is on sys.path when running as a script
+    _THIS = Path(__file__).resolve()
+    _ROOT = _THIS.parents[2]  # repo root
+    if str(_ROOT) not in sys.path:
+        sys.path.insert(0, str(_ROOT))
+
+    from runtime.overlay.qt_capture_view import run_qt_capture
+except Exception as _qt_err:
+    print(f"[screen.py] Qt viewer unavailable, falling back to OpenCV: {_qt_err}")
+    run_qt_capture = None
 
 DISPLAY_SCALE = 2
 
 
-# Global variables for rectangle selection and click state
+# Global variables for rectangle selection and click state (cv2 fallback mode only)
 drawing = False
 rect_start = None
 rect_end = None
@@ -213,10 +228,19 @@ def main():
     fps_counter = 0
     start_time = time.time()
     
+    # Prefer Qt-based viewer if available
+    if run_qt_capture is not None:
+        print("Launching Qt-based capture window... (R: select, S: screenshot, Q/Esc: quit)")
+        try:
+            run_qt_capture()
+        finally:
+            cv2.destroyAllWindows()
+        return
+
+    # Fallback: original OpenCV window loop
     try:
         while True:
             if not selection_mode:
-                # Normal capture mode
                 monitor_int = {
                     "top": int(round(monitor["top"])),
                     "left": int(round(monitor["left"])),
@@ -226,8 +250,6 @@ def main():
                 frame = np.array(sct.grab(monitor_int))
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
-                
-                # Add FPS and info
                 fps_counter += 1
                 elapsed_time = time.time() - start_time
                 if elapsed_time > 0:
@@ -247,14 +269,12 @@ def main():
                 break
             elif key == ord('r') or key == ord('R'):  # Selection mode
                 cv2.destroyAllWindows()
-                
                 new_monitor = selection_overlay_mode(sct, screen_width, screen_height)
                 if new_monitor:
                     monitor = new_monitor
-                    # Reset FPS counter
                     fps_counter = 0
                     start_time = time.time()
-            elif key == ord('s') or key == ord('S'):  # Save screenshot
+            elif key == ord('s') or key == ord('S'):
                 if not selection_mode:
                     monitor_int = {
                         "top": int(round(monitor["top"])),
@@ -271,7 +291,6 @@ def main():
                     
     except KeyboardInterrupt:
         print("\nCapture interrupted by user")
-    
     finally:
         cv2.destroyAllWindows()
         if fps_counter > 0 and time.time() - start_time > 0:
