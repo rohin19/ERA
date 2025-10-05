@@ -21,7 +21,10 @@ except ImportError as e:
 
 # --- Card image mapping ---
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), 'assets')
-BACKGROUND_PATH = os.path.join(ASSETS_DIR, 'Clash-Royale-background.jpg')
+# BACKGROUND_PATH = os.path.join(ASSETS_DIR, 'Clash-Royale-background.jpg')
+BACKGROUND_PATH = os.path.join(ASSETS_DIR, 'overlay.png')
+
+HEADER_PATH = os.path.join(ASSETS_DIR, 'edgeheader.png')
 CARD_IMG_SIZE = (70, 90)
 
 def get_placeholder_card():
@@ -70,6 +73,15 @@ class OpenCVCaptureEngine:
                 print(f"Warning: Could not load background image at {BACKGROUND_PATH}")
         else:
             print(f"Warning: Background image not found at {BACKGROUND_PATH}")
+            self.header_img = None
+            if os.path.exists(HEADER_PATH):
+                header = cv2.imread(HEADER_PATH)
+                if header is not None:
+                    self.header_img = header
+                else:
+                    print(f"Warning: Could not load header image at {HEADER_PATH}")
+            else:
+                print(f"Warning: Header image not found at {HEADER_PATH}")
         self.last_fps_time = time.time()
 
     def run(self):
@@ -195,9 +207,24 @@ class OpenCVCaptureEngine:
                         if card:
                             cv2.putText(overlay, card[:12], (x+4, y+card_h-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
 
+                    header_img = None
+                    if os.path.exists(HEADER_PATH):
+                        header_img = cv2.imread(HEADER_PATH)
+                    if header_img is not None:
+                        # Resize header to fit sidebar width
+                        header_h = header_img.shape[0]  # or set to header_img.shape[0] for original height
+                        header_resized = cv2.resize(header_img, (sidebar_width, header_h))
+                        # Compute y position: bottom of last card + 50px
+                        last_row = 1  # second row (0-indexed)
+                        last_card_y = start_y + last_row * (card_h + gap_y)
+                        y_header = last_card_y + card_h + 50
+                        # Only draw if it fits in the sidebar
+                        if y_header + header_h < overlay.shape[0]:
+                            overlay[y_header:y_header+header_h, 0:sidebar_width] = header_resized
+
 
                     # Compose output dimensions
-                    border_width = 200
+                    border_width = 400
                     sidebar_width = 400
                     h, w = frame.shape[:2]
                     total_w = border_width + w + sidebar_width
