@@ -234,11 +234,11 @@ class GameFeedWidget(QWidget):
             # Convert frame to Qt format and display
             height, width, channel = self.current_frame.shape
             bytes_per_line = 3 * width
-            q_image = QtGui.QImage(self.current_frame.data, width, height, 
-                                 bytes_per_line, QtGui.QImage.Format_RGB888).rgbSwapped()
+            q_image = QImage(self.current_frame.data, width, height, 
+                           bytes_per_line, QImage.Format_RGB888).rgbSwapped()
             
             # Scale to widget size
-            scaled_pixmap = QtGui.QPixmap.fromImage(q_image).scaled(
+            scaled_pixmap = QPixmap.fromImage(q_image).scaled(
                 self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
             painter.drawPixmap(0, 0, scaled_pixmap)
