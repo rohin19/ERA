@@ -7,30 +7,33 @@ import os
 
 DISPLAY_SCALE = 2
 
-# Global variables for rectangle selection
+
+# Global variables for rectangle selection and click state
 drawing = False
 rect_start = None
 rect_end = None
 selection_mode = False
 
+
 def mouse_callback(event, x, y, flags, param):
     global drawing, rect_start, rect_end
-    
+
     if not selection_mode:
         return
-    
+
     if event == cv2.EVENT_LBUTTONDOWN:
-        drawing = True
-        rect_start = (x, y)
-        rect_end = (x, y)
-    
-    elif event == cv2.EVENT_MOUSEMOVE:
-        if drawing:
+        if not drawing:
+            # Start new selection
+            rect_start = (x, y)
+            rect_end = None
+            drawing = True
+        else:
+            # Finish selection
             rect_end = (x, y)
-    
-    elif event == cv2.EVENT_LBUTTONUP:
-        drawing = False
-        rect_end = (x, y)
+            drawing = False
+    elif event == cv2.EVENT_MOUSEMOVE:
+        if drawing and rect_start is not None:
+            rect_end = (x, y)
 
 def load_capture_config():
     """Load saved capture area configuration"""
@@ -63,6 +66,7 @@ def selection_overlay_mode(sct, screen_width, screen_height):
     selection_mode = True
     rect_start = None
     rect_end = None
+    drawing = False
     
     # Take a screenshot of the full screen to use as the background BEFORE creating any windows
     full_monitor = sct.monitors[1]
@@ -103,25 +107,26 @@ def selection_overlay_mode(sct, screen_width, screen_height):
         cv2.putText(overlay, "Press 's' to save, 'c' to cancel", (50, 140), 
                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-        # Draw selection rectangle
+        # Draw green starting point if set
+        if rect_start:
+            x1, y1 = rect_start
+            cv2.circle(overlay, (x1, y1), 6, (0, 255, 0), -1)
+
+        # Draw selection rectangle if in progress or finished
         if rect_start and rect_end:
             x1, y1 = rect_start
             x2, y2 = rect_end
 
-            # Ensure coordinates are in correct order
             left = min(x1, x2)
             top = min(y1, y2)
             right = max(x1, x2)
             bottom = max(y1, y2)
 
-            # Draw rectangle
             cv2.rectangle(overlay, (left, top), (right, bottom), (0, 255, 0), 3)
-
-            # Add coordinates text
             width = right - left
             height = bottom - top
             cv2.putText(overlay, f"Area: {width}x{height} at ({left},{top})", 
-                       (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
         cv2.imshow("Selection Overlay", overlay)
 
@@ -131,7 +136,7 @@ def selection_overlay_mode(sct, screen_width, screen_height):
         DISPLAY_SCALE = w / screen_width
         # print(f"Display Scale {DISPLAY_SCALE}") 
 
-        key = cv2.waitKey(1) & 0xFF
+        key = cv2.waitKey(30) & 0xFF
         if key == ord('s') or key == ord('S'):  # Save selection
             if rect_start and rect_end:
                 x1, y1 = rect_start
@@ -156,7 +161,7 @@ def selection_overlay_mode(sct, screen_width, screen_height):
                 else:
                     print("Selection too small! Please select a larger area.")
             else:
-                print("No selection made! Please draw a rectangle first.")
+                print("No selection made! Please click twice to select area.")
 
         elif key == ord('c') or key == ord('C') or key == 27:  # Cancel
             cv2.destroyWindow("Selection Overlay")
