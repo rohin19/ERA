@@ -5,6 +5,8 @@ import time
 import json
 import os
 
+DISPLAY_SCALE = 2
+
 # Global variables for rectangle selection
 drawing = False
 rect_start = None
@@ -72,10 +74,13 @@ def selection_overlay_mode(sct, screen_width, screen_height):
     cv2.setWindowProperty("Selection Overlay", cv2.WND_PROP_TOPMOST, 1)
     cv2.moveWindow("Selection Overlay", 0, 0)
     cv2.resizeWindow("Selection Overlay", screen_width, screen_height)
+
     
     # Force window to stay at full screen size (disable resizing)
     cv2.setWindowProperty("Selection Overlay", cv2.WND_PROP_ASPECT_RATIO, cv2.WINDOW_FREERATIO)
     cv2.setMouseCallback("Selection Overlay", mouse_callback)
+
+
     
     # Give the window time to resize properly
     cv2.waitKey(100)
@@ -120,16 +125,22 @@ def selection_overlay_mode(sct, screen_width, screen_height):
 
         cv2.imshow("Selection Overlay", overlay)
 
+        x, y, w, h = cv2.getWindowImageRect("Selection Overlay")
+        # print(f"Window position: ({x},{y}) size: {w}x{h}")
+        global DISPLAY_SCALE
+        DISPLAY_SCALE = w / screen_width
+        # print(f"Display Scale {DISPLAY_SCALE}") 
+
         key = cv2.waitKey(1) & 0xFF
         if key == ord('s') or key == ord('S'):  # Save selection
             if rect_start and rect_end:
                 x1, y1 = rect_start
                 x2, y2 = rect_end
 
-                left = min(x1, x2)
-                top = min(y1, y2)
-                width = abs(x2 - x1)
-                height = abs(y2 - y1)
+                left = min(x1, x2) / DISPLAY_SCALE
+                top = min(y1, y2) / DISPLAY_SCALE
+                width = abs(x2 - x1) / DISPLAY_SCALE
+                height = abs(y2 - y1) / DISPLAY_SCALE
 
                 if width > 10 and height > 10:  # Minimum size check
                     monitor = {
