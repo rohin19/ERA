@@ -420,7 +420,8 @@ class ClashRoyaleAssistant(QWidget):
     def setup_ui(self):
         """Setup the main UI"""
         self.setWindowTitle("🎮 Clash Royale Analytics Assistant")
-        self.setGeometry(100, 100, 1200, 800)
+        self.setGeometry(100, 100, 100, 500)
+        self.setFixedSize(800, 1000)
         self.setStyleSheet("background-color: #1e1e1e;")
         
         # Main layout

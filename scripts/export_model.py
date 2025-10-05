@@ -1,3 +1,14 @@
+import torch
+import functools
+
+# Patch torch.load to default weights_only=False for PyTorch >=2.6
+orig_torch_load = torch.load
+def patched_torch_load(*args, **kwargs):
+    if 'weights_only' not in kwargs:
+        kwargs['weights_only'] = False
+    return orig_torch_load(*args, **kwargs)
+torch.load = patched_torch_load
+
 import sys
 from pathlib import Path
 from ultralytics import YOLO
