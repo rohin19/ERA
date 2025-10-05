@@ -4,3 +4,11 @@ venv
 .venv/
 ~.venv/
 ../venv
+
+/data
+data
+data
+data/
+~data/
+../data
+/data/
