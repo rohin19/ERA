@@ -1,6 +1,7 @@
-# YOLO dataset config
-# Adjust 'path' if running training from a different working directory.
-path: ../data/dataset.yolov11/
+# YOLO dataset config  
+# Root path to Roboflow export directory (contains train/ valid/ subfolders)
+# Note: Use relative path from project root, not from model/ directory
+path: data/dataset_yolov11
 train: train/images
 val: valid/images
 

@@ -1,16 +1,88 @@
-capture_config.json
-/venv
-venv
-.venv
+# ===== Python Environments =====
+venv/
 .venv/
-~.venv/
-../venv
+env/
+__pypackages__/
 
-/data
-data
-data
-data/
-~data/
-../data
-/data/
+# ===== Python Bytecode & Caches =====
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
+# ===== Build / Packaging =====
+build/
+dist/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+
+# ===== Environment / Secrets =====
+.env
+.env.*
+*.env
+*.secret
+
+# ===== IDE / Editor =====
+.vscode/
+.idea/
+*.code-workspace
+
+# ===== Jupyter =====
+.ipynb_checkpoints/
+
+# ===== Model Weights & Artifacts =====
+*.pt
+*.pth
+*.onnx
+*.engine
+*.trt
+*.bin
+*.xml
+*.tflite
+*.mlmodel
+*.h5
+*.ckpt
+
+# ===== Ultralytics / YOLO Runs =====
+model/runs*/
+
+# ===== Dataset (ignore heavy assets) =====
+data/dataset_yolov11/
+data/videos/
+data/frames/
+data/labels/
+
+# Keep essential config files
+!data/README.md
+!data/classes.txt
+!data/dataset_yolov11/data.yaml
+!data/dataset_yolov11/README*.txt
+
+# Cache files
+*.cache
+*.lmdb
+
+# ===== Runtime Output / Debug =====
+*.jpg
+*.png
+*.mp4
+!assets/*.png
+
+# ===== Node / Frontend (future-proof) =====
+node_modules/
+*.tsbuildinfo
+
+# ===== Misc =====
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+capture_config.json

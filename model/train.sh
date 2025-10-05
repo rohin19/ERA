@@ -9,7 +9,7 @@ python - <<'PY'
 from ultralytics import YOLO
 model = YOLO('yolov8n.pt')  # base model; adjust if you have a custom init
 model.train(
-    data='../data/dataset_yolov11/data.yaml',  # updated to Roboflow dataset path
+    data='model/cr_data.yaml',  # unified dataset config
     project='model',
     name='runs',
     epochs=50,
