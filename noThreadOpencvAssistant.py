@@ -21,6 +21,7 @@ except ImportError as e:
 
 # --- Card image mapping ---
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), 'assets')
+BACKGROUND_PATH = os.path.join(ASSETS_DIR, 'Clash-Royale-background.jpg')
 CARD_IMG_SIZE = (70, 90)
 
 def get_placeholder_card():
@@ -60,6 +61,15 @@ class OpenCVCaptureEngine:
         self.game_state = GameState()  # Use newGameState.GameState
         self.fps = 0.0
         self.frame_count = 0
+        self.background_img = None
+        if os.path.exists(BACKGROUND_PATH):
+            bg = cv2.imread(BACKGROUND_PATH)
+            if bg is not None:
+                self.background_img = bg
+            else:
+                print(f"Warning: Could not load background image at {BACKGROUND_PATH}")
+        else:
+            print(f"Warning: Background image not found at {BACKGROUND_PATH}")
         self.last_fps_time = time.time()
 
     def run(self):
@@ -120,7 +130,7 @@ class OpenCVCaptureEngine:
                     cv2.putText(frame, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,255), 2)
 
                     # Listen for spacebar to start elixir counting
-                    key = cv2.waitKey(35) & 0xFF
+                    key = cv2.waitKey(45) & 0xFF
                     if key == ord('q'):
                         self.stop()
                         break
@@ -185,10 +195,36 @@ class OpenCVCaptureEngine:
                         if card:
                             cv2.putText(overlay, card[:12], (x+4, y+card_h-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
 
-                    # Combine sidebar with frame
-                    frame = np.hstack([frame, overlay])
 
-                    cv2.imshow(window_name, frame)
+                    # Compose output dimensions
+                    border_width = 200
+                    sidebar_width = 400
+                    h, w = frame.shape[:2]
+                    total_w = border_width + w + sidebar_width
+
+                    # Prepare background
+                    if self.background_img is not None:
+                        bg_resized = cv2.resize(self.background_img, (total_w, h))
+                    else:
+                        bg_resized = np.zeros((h, total_w, 3), dtype=np.uint8)
+
+                    # Overlay the frame in the center, with yellow bars on each side
+                    yellow_bar_width = 25
+                    yellow_color = (0, 160, 218)  # BGR for OpenCV
+                    # Draw left yellow bar
+                    bg_resized[:, border_width:border_width+yellow_bar_width] = yellow_color
+                    # Draw right yellow bar
+                    bg_resized[:, border_width+w-yellow_bar_width:border_width+w] = yellow_color
+                    # Overlay the frame (between yellow bars)
+                    bg_resized[:, border_width+yellow_bar_width:border_width+w-yellow_bar_width] = frame[:, yellow_bar_width:w-yellow_bar_width]
+
+                    # Overlay the sidebar content (only non-black parts)
+                    sidebar_mask = np.any(overlay != 0, axis=2)
+                    for c in range(3):
+                        bg_resized[:, border_width+w:, c][sidebar_mask] = overlay[:,:,c][sidebar_mask]
+
+                    final = bg_resized
+                    cv2.imshow(window_name, final)
 
                     self._update_fps()
                 except Exception as e:
