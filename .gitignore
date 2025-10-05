@@ -40,7 +40,6 @@ pip-wheel-metadata/
 .ipynb_checkpoints/
 
 # ===== Model Weights & Artifacts =====
-*.pt
 *.pth
 *.onnx
 *.engine
