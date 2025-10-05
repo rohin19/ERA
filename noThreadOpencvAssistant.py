@@ -207,20 +207,6 @@ class OpenCVCaptureEngine:
                         if card:
                             cv2.putText(overlay, card[:12], (x+4, y+card_h-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
 
-                    header_img = None
-                    if os.path.exists(HEADER_PATH):
-                        header_img = cv2.imread(HEADER_PATH)
-                    if header_img is not None:
-                        # Resize header to fit sidebar width
-                        header_h = header_img.shape[0]  # or set to header_img.shape[0] for original height
-                        header_resized = cv2.resize(header_img, (sidebar_width, header_h))
-                        # Compute y position: bottom of last card + 50px
-                        last_row = 1  # second row (0-indexed)
-                        last_card_y = start_y + last_row * (card_h + gap_y)
-                        y_header = last_card_y + card_h + 50
-                        # Only draw if it fits in the sidebar
-                        if y_header + header_h < overlay.shape[0]:
-                            overlay[y_header:y_header+header_h, 0:sidebar_width] = header_resized
 
 
                     # Compose output dimensions
@@ -251,6 +237,20 @@ class OpenCVCaptureEngine:
                         bg_resized[:, border_width+w:, c][sidebar_mask] = overlay[:,:,c][sidebar_mask]
 
                     final = bg_resized
+
+                    # --- Draw edgeheader.png at the top-left, max width 400px, height scaled proportionally ---
+                    header_img = None
+                    HEADER_PATH = os.path.join(ASSETS_DIR, 'edgeheader.png')
+                    if os.path.exists(HEADER_PATH):
+                        header_img = cv2.imread(HEADER_PATH)
+                    if header_img is not None:
+                        max_header_width = 400
+                        h_ratio = max_header_width / header_img.shape[1]
+                        header_h = int(header_img.shape[0] * h_ratio)
+                        header_resized = cv2.resize(header_img, (max_header_width, header_h))
+                        # Overlay header on the top-left of the final image, fill only header_h rows
+                        final[:header_h, :max_header_width] = header_resized
+
                     cv2.imshow(window_name, final)
 
                     self._update_fps()
