@@ -8,7 +8,7 @@ from pathlib import Path
 ROI = (100, 120, 800, 1280)  # TODO: Calibrate
 
 # Model & inference
-ONNX_MODEL_PATH = Path('model/weights/best.onnx')
+ONNX_MODEL_PATH = Path('model/weights/best.pt')
 INPUT_SIZE = 640  # model square input
 CONF_THRESHOLD = 0.25
 NMS_IOU_THRESHOLD = 0.45
@@ -16,7 +16,7 @@ MAX_DETECTIONS = 50
 
 # Classes (must match data/classes.txt order)
 CLASSES = [
-    'card1','card2','card3','card4','card5','card6','card7','card8'
+    'Baby Dragon','Bomber','Dart Goblin','Giant','Hog Rider','Knight','Mini Pekka','Valkyrie'
 ]
 
 # Overlay
