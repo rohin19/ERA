@@ -3,7 +3,7 @@ Currently stubbed so different team members can fill parts independently.
 """
 from runtime.config import ONNX_MODEL_PATH
 from runtime.infer.onnx_engine import OnnxEngine
-from runtime.gamestate.state import GameState
+from runtime.gamestate.gamestate import GameState
 
 
 def main():

@@ -28,19 +28,25 @@ def main():
         model = YOLO('yolov8n.pt')  # or 'yolo11n.pt' for v11
         
         model.train(
-            data='model/cr_data.yaml',
+            data=os.path.join(project_root, 'model/cr_data.yaml'),
             epochs=epochs,
             imgsz=640,
             batch=batch_size,
+            device=0,
             patience=10,
             project='model',
             name='runs',
             pretrained=True,
             workers=4,
+            # Enable TensorBoard logging
+            plots=True,  # Plot results to TensorBoard
+            save=True,   # Save train/val/predict images
+            exist_ok=True,  # Overwrite existing experiment
         )
         
         print("✅ Training completed successfully!")
         print("📂 Check: model/runs/*/weights/best.pt")
+        print("📊 View TensorBoard logs: tensorboard --logdir model/runs")
         
     except ImportError:
         print("❌ ultralytics not installed. Run: pip install ultralytics")
