@@ -183,6 +183,66 @@ def selection_overlay_mode(sct, screen_width, screen_height):
             selection_mode = False
             return None
 
+def capture_single_frame(monitor_config=None):
+    """Capture a single frame for use by other modules.
+    
+    This function provides a clean interface for other modules to grab
+    frames using the same configuration as the main capture tool.
+    
+    Args:
+        monitor_config: Dict with 'top', 'left', 'width', 'height' or None for saved config
+        
+    Returns:
+        BGR frame as numpy array, or None if capture failed
+    """
+    if monitor_config is None:
+        # Use saved configuration
+        monitor_config = load_capture_config()
+        if monitor_config is None:
+            # Fallback to default
+            monitor_config = {
+                "top": 100,
+                "left": 100,
+                "width": 800,
+                "height": 600
+            }
+    
+    try:
+        with mss.mss() as sct:
+            # Convert to integer coordinates for MSS
+            monitor_int = {
+                "top": int(round(monitor_config["top"])),
+                "left": int(round(monitor_config["left"])),
+                "width": int(round(monitor_config["width"])),
+                "height": int(round(monitor_config["height"]))
+            }
+            
+            # Capture frame
+            frame = np.array(sct.grab(monitor_int))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+            
+            return frame
+            
+    except Exception as e:
+        print(f"Frame capture failed: {e}")
+        return None
+
+def get_current_capture_config():
+    """Get the current capture area configuration.
+    
+    Returns:
+        Dict with monitor config or None if no config exists
+    """
+    return load_capture_config()
+
+def is_qt_capture_available():
+    """Check if Qt capture interface is available.
+    
+    Returns:
+        bool: True if Qt interface can be used
+    """
+    return run_qt_capture is not None
+
 def main():
     global selection_mode
     
