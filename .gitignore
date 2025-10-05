@@ -1,2 +1,16 @@
-.venv
 capture_config.json
+/venv
+venv
+.venv
+.venv/
+~.venv/
+../venv
+
+/data
+data
+data
+data/
+~data/
+../data
+/data/
+
