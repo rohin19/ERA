@@ -99,7 +99,7 @@ ERA/
 
 ### Dependencies
 ```bash
-pip install ultralytics opencv-python numpy mss
+pip install -r requirements.txt
 ```
 
 ### Setup
