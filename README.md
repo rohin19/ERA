@@ -1,9 +1,10 @@
 # Edge Royale Analytics (ERA)
 
-Real-time Clash Royale opponent card tracking and prediction system using computer vision and machine learning.
+Real-time Clash Royale opponent card tracking and prediction system using computer vision and machine learning.     
+
+[Demo Video](https://www.youtube.com/watch?v=d3FYPzs-ZBQ)
 
 ## Overview
-
 ERA uses a custom-trained YOLOv8 model to detect opponent card plays in real-time, track their deck composition, predict their next moves, and monitor elixir levels. The system runs entirely locally with no external API dependencies.
 
 ## Core Features
@@ -252,10 +253,9 @@ bash model/train.sh
 bash model/validate.sh
 ```
 
-## License
-
-MIT License - See LICENSE file for details
-
 ## Contributors
 
-Development team focused on real-time game analytics and computer vision applications.
+Jayden Troung | [kendymann](https://github.com/kendymann)   
+Rohin Aulakh | [rohin19](https://github.com/rohin19)   
+Hugo Najafi | [HugoNajafi](https://github.com/HugoNajafi)    
+Michael Bazett | [Bazinator](https://github.com/Bazinator)   
